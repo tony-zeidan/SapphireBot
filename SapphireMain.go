@@ -3,23 +3,28 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 var (
-	Token     string
-	validList [2]string
+	Token    string
+	validMap map[string]interface{}
 )
 
 func init() {
 	flag.StringVar(&Token, "t", "NjcyNTkwMDE4MzUwNDE1ODc0.XjNsRA.Dr_CmP1J2DI0COuw3z23XNLlkgk", "Bot Token")
 	flag.Parse()
-	validList[0] = "s/youhere"
-	validList[1] = "s/hello"
+	validMap = make(map[string]interface{})
+	validMap["hello"] = helloCommand
+	validMap["roll"] = rollCommand
+	validMap["report"] = reportCommand
 }
 
 func main() {
@@ -48,28 +53,33 @@ func main() {
 
 }
 
+func helloCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	s.ChannelMessageSend(m.ChannelID, "Hi there "+m.Author.Mention())
+}
+
+func rollCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	s.ChannelMessageSend(m.ChannelID, "Your roll is: "+strconv.Itoa(rand.Intn(6)+1))
+}
+
+func reportCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	s.ChannelMessageSend(m.ChannelID, "Reporting for duty.")
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	isValid := false
+	var content string
+	content = m.Content
 
-	for i := 0; i < len(validList); i++ {
-		if m.Content == validList[i] {
-			isValid = true
-			break
-		}
+	if !strings.HasPrefix(content, "s/") {
+		return
 	}
 
-	if isValid {
-		if m.Content == "s/youhere" {
-			s.ChannelMessageSend(m.ChannelID, "Reporting for duty.")
-		} else if m.Content == "s/hello" {
-			s.ChannelMessageSend(m.ChannelID, "Hi there "+m.Author.Mention())
-		} else {
-			s.ChannelMessageSend(m.ChannelID, "That was not a valid command.")
-		}
+	if v, found := validMap[strings.Split(content, "s/")[1]]; found {
+		v.(func(*discordgo.Session, *discordgo.MessageCreate))(s, m)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "That was not a valid command.")
 	}
-
 }
