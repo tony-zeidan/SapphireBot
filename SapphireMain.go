@@ -69,7 +69,7 @@ func reportCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 func helpCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	contentString := "list of commands:\n```"
 	for k := range validMap {
-		contentString += "\t" + k + "\n"
+		contentString += "\t-" + k + "\n"
 	}
 	s.ChannelMessageSend(m.ChannelID, contentString+"```")
 }
