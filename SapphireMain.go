@@ -25,6 +25,7 @@ func init() {
 	validMap["hello"] = helloCommand
 	validMap["roll"] = rollCommand
 	validMap["report"] = reportCommand
+	validMap["help"] = helpCommand
 }
 
 func main() {
@@ -63,6 +64,14 @@ func rollCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func reportCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	s.ChannelMessageSend(m.ChannelID, "Reporting for duty.")
+}
+
+func helpCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	contentString := "list of commands:\n```"
+	for k := range validMap {
+		contentString += "\t" + k + "\n"
+	}
+	s.ChannelMessageSend(m.ChannelID, contentString+"```")
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
