@@ -22,11 +22,15 @@ var (
 )
 
 const (
+	//Giphy API token
 	GIPHY_API_TOKEN = "CXYNdpzCDL4y8XgaJqgWf75khRNc1goy"
-	RAND_UPPER_LIM  = 100000
+	//Random number generation upper limit
+	RAND_UPPER_LIM = 100000
+	//Giphy number of images limit
 	GIPHY_PRINT_LIM = 3
 )
 
+//Run once on initialization
 func init() {
 	flag.StringVar(&Token, "t", "NjcyNTkwMDE4MzUwNDE1ODc0.XjNsRA.Dr_CmP1J2DI0COuw3z23XNLlkgk", "Bot Token")
 	flag.Parse()
@@ -34,7 +38,7 @@ func init() {
 	validMap = make(map[string]interface{})
 	validMap["hello"] = helloCommand
 	validMap["roll"] = rollCommand
-	validMap["report"] = reportCommand
+	validMap["status"] = reportCommand
 	validMap["freq"] = occurrencesCommand
 	validMap["help"] = helpCommand
 	validMap["giphy"] = giphySearchCommand
@@ -66,16 +70,22 @@ func main() {
 
 }
 
+//Data structure for containing command data
 type CommandData struct {
-	Args      []string
-	Author    *discordgo.User
+	//command arguments
+	Args []string
+	//author of the command
+	Author *discordgo.User
+	//channel id from which the command was obtained
 	ChannelID string
 }
 
+//respond to the user saying hello
 func helloCommand(s *discordgo.Session, data *CommandData) {
 	s.ChannelMessageSend(data.ChannelID, "Hi there "+data.Author.Mention())
 }
 
+//respond to the roll command by sending a reply (containing random integer)
 func rollCommand(s *discordgo.Session, data *CommandData) {
 	args := data.Args
 	num1 := 1
@@ -111,10 +121,12 @@ func rollCommand(s *discordgo.Session, data *CommandData) {
 	s.ChannelMessageSend(data.ChannelID, "Your roll is: "+strconv.Itoa(rand.Intn(num2-num1)+num1))
 }
 
+//respond to the user asking the bot if it is online
 func reportCommand(s *discordgo.Session, data *CommandData) {
 	s.ChannelMessageSend(data.ChannelID, "Reporting for duty.")
 }
 
+//respond to the user asking for help with the bots commands by sending a list of available commands
 func helpCommand(s *discordgo.Session, data *CommandData) {
 	contentString := "list of commands:\n```"
 	for k := range validMap {
@@ -123,6 +135,7 @@ func helpCommand(s *discordgo.Session, data *CommandData) {
 	s.ChannelMessageSend(data.ChannelID, contentString+"```")
 }
 
+//count the occurrences of words in the users message and send it back
 func occurrencesCommand(s *discordgo.Session, data *CommandData) {
 	occurMap := make(map[string]int)
 	for _, w := range data.Args {
@@ -136,6 +149,7 @@ func occurrencesCommand(s *discordgo.Session, data *CommandData) {
 	s.ChannelMessageSend(data.ChannelID, contentString+"```")
 }
 
+//search the giphy library for either the top 3 trending gifs or the a random one of what the user requested
 func giphySearchCommand(s *discordgo.Session, data *CommandData) {
 
 	searchString := strings.Join(data.Args, " ")
@@ -166,6 +180,7 @@ func giphySearchCommand(s *discordgo.Session, data *CommandData) {
 	}
 }
 
+//respond to the creating of message events by checking for input commands
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
