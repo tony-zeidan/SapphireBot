@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unicode"
 
 	"github.com/bwmarrin/discordgo"
@@ -28,6 +29,9 @@ const (
 	RAND_UPPER_LIM = 100000
 	//Giphy number of images limit
 	GIPHY_PRINT_LIM = 3
+	//Sapphire gif (for gift command)
+	SAPPHIRE_URL     = "https://assets.bigcartel.com/product_images/158847679/SAV-201V---75361.gif"
+	GIFT_MENTION_LIM = 3
 )
 
 //Run once on initialization
@@ -42,6 +46,7 @@ func init() {
 	validMap["freq"] = occurrencesCommand
 	validMap["help"] = helpCommand
 	validMap["giphy"] = giphySearchCommand
+	validMap["gift"] = giftCommand
 }
 
 func main() {
@@ -74,6 +79,8 @@ func main() {
 type CommandData struct {
 	//command arguments
 	Args []string
+	//API message object
+	Message *discordgo.Message
 	//author of the command
 	Author *discordgo.User
 	//channel id from which the command was obtained
@@ -180,6 +187,41 @@ func giphySearchCommand(s *discordgo.Session, data *CommandData) {
 	}
 }
 
+func giftCommand(s *discordgo.Session, data *CommandData) {
+
+	mentions := data.Message.Mentions
+
+	//check if the arguments were only mentions
+	if len(data.Args) != len(mentions) {
+		s.ChannelMessageSend(data.ChannelID, "You must only mention members for this command.")
+		return
+	} else if len(data.Args) > GIFT_MENTION_LIM || len(data.Args) < 1 {
+		s.ChannelMessageSend(data.ChannelID, "You input too many or too little arguments for this command.")
+		return
+	}
+
+	mentionString := "A gift for "
+	for _, v := range mentions {
+		mentionString += v.Username + " "
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Author:      &discordgo.MessageEmbedAuthor{},
+		Color:       0x008000, // Blue
+		Description: "A sapphire is more precious than anything.",
+		Fields:      []*discordgo.MessageEmbedField{},
+		Image: &discordgo.MessageEmbedImage{
+			URL: SAPPHIRE_URL,
+		},
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: data.Author.AvatarURL(""),
+		},
+		Timestamp: time.Now().Format(time.RFC3339), // Discord wants ISO8601; RFC3339 is an extension of ISO8601 and should be completely compatible.
+		Title:     mentionString,
+	}
+	s.ChannelMessageSendEmbed(data.ChannelID, embed)
+}
+
 //respond to the creating of message events by checking for input commands
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
@@ -192,13 +234,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.FieldsFunc(content, func(c rune) bool {
 		return unicode.IsSpace(c)
 	})
+	fmt.Println(args)
 
 	if len(args) == 0 || !strings.HasPrefix(args[0], "s/") {
 		return
 	}
 
 	commandWord := strings.Split(args[0], "s/")[1]
-	data := CommandData{args[1:], m.Author, m.ChannelID}
+	data := CommandData{args[1:], m.Message, m.Author, m.ChannelID}
 	fmt.Println(data)
 
 	if v, found := validMap[commandWord]; found {
