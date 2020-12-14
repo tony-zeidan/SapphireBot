@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/sanzaru/go-giphy"
 	"math/rand"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
+	"unicode"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -16,16 +18,26 @@ import (
 var (
 	Token    string
 	validMap map[string]interface{}
+	giphyLib *libgiphy.Giphy
+)
+
+const (
+	GIPHY_API_TOKEN = "CXYNdpzCDL4y8XgaJqgWf75khRNc1goy"
+	RAND_UPPER_LIM  = 100000
+	GIPHY_PRINT_LIM = 3
 )
 
 func init() {
 	flag.StringVar(&Token, "t", "NjcyNTkwMDE4MzUwNDE1ODc0.XjNsRA.Dr_CmP1J2DI0COuw3z23XNLlkgk", "Bot Token")
 	flag.Parse()
+	giphyLib = libgiphy.NewGiphy(GIPHY_API_TOKEN)
 	validMap = make(map[string]interface{})
 	validMap["hello"] = helloCommand
 	validMap["roll"] = rollCommand
 	validMap["report"] = reportCommand
+	validMap["freq"] = occurrencesCommand
 	validMap["help"] = helpCommand
+	validMap["giphy"] = giphySearchCommand
 }
 
 func main() {
@@ -54,24 +66,104 @@ func main() {
 
 }
 
-func helloCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
-	s.ChannelMessageSend(m.ChannelID, "Hi there "+m.Author.Mention())
+type CommandData struct {
+	Args      []string
+	Author    *discordgo.User
+	ChannelID string
 }
 
-func rollCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
-	s.ChannelMessageSend(m.ChannelID, "Your roll is: "+strconv.Itoa(rand.Intn(6)+1))
+func helloCommand(s *discordgo.Session, data *CommandData) {
+	s.ChannelMessageSend(data.ChannelID, "Hi there "+data.Author.Mention())
 }
 
-func reportCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
-	s.ChannelMessageSend(m.ChannelID, "Reporting for duty.")
+func rollCommand(s *discordgo.Session, data *CommandData) {
+	args := data.Args
+	num1 := 1
+	num2 := 6
+	if len(args) >= 1 {
+		parsed1, err1 := strconv.Atoi(args[0])
+		if err1 != nil {
+			s.ChannelMessageSend(data.ChannelID, "You cannot input a non-numeric value into this command. (Slot 1)")
+			return
+		} else if parsed1 > RAND_UPPER_LIM {
+			s.ChannelMessageSend(data.ChannelID, "Your value was too great. (Slot 1)")
+			return
+		}
+		num1 = parsed1
+	}
+
+	if len(args) == 2 {
+		parsed2, err2 := strconv.Atoi(args[1])
+		if err2 != nil {
+			s.ChannelMessageSend(data.ChannelID, "You cannot input a non-numeric value into this command. (Slot 2)")
+		} else if parsed2 > RAND_UPPER_LIM {
+			s.ChannelMessageSend(data.ChannelID, "Your value was too great. (Slot 2)")
+			return
+		}
+		num2 = parsed2
+	}
+
+	if num1 >= num2 {
+		s.ChannelMessageSend(data.ChannelID, "You must input two values, the first one smaller than the other (num1>=num2)")
+		return
+	}
+
+	s.ChannelMessageSend(data.ChannelID, "Your roll is: "+strconv.Itoa(rand.Intn(num2-num1)+num1))
 }
 
-func helpCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+func reportCommand(s *discordgo.Session, data *CommandData) {
+	s.ChannelMessageSend(data.ChannelID, "Reporting for duty.")
+}
+
+func helpCommand(s *discordgo.Session, data *CommandData) {
 	contentString := "list of commands:\n```"
 	for k := range validMap {
 		contentString += "\t-" + k + "\n"
 	}
-	s.ChannelMessageSend(m.ChannelID, contentString+"```")
+	s.ChannelMessageSend(data.ChannelID, contentString+"```")
+}
+
+func occurrencesCommand(s *discordgo.Session, data *CommandData) {
+	occurMap := make(map[string]int)
+	for _, w := range data.Args {
+		occurMap[w] += 1
+	}
+
+	contentString := "Occurrences:\n```"
+	for k, v := range occurMap {
+		contentString += "(" + k + "," + strconv.Itoa(v) + ")\n"
+	}
+	s.ChannelMessageSend(data.ChannelID, contentString+"```")
+}
+
+func giphySearchCommand(s *discordgo.Session, data *CommandData) {
+
+	searchString := strings.Join(data.Args, " ")
+
+	if searchString == "trending" {
+		dataSearch, err := giphyLib.GetTrending()
+		if err != nil {
+			s.ChannelMessageSend(data.ChannelID, "There was an error while attempting a request to the Giphy Library.")
+			return
+		}
+		s.ChannelMessageSend(data.ChannelID, "Here are my top 5")
+		printLen := GIPHY_PRINT_LIM
+		if (len(dataSearch.Data)) < GIPHY_PRINT_LIM {
+			printLen = len(dataSearch.Data)
+		}
+
+		for i := 0; i < printLen; i++ {
+			s.ChannelMessageSend(data.ChannelID, dataSearch.Data[i].Url)
+		}
+
+	} else {
+		dataSearch, err := giphyLib.GetRandom(searchString)
+		if err != nil {
+			s.ChannelMessageSend(data.ChannelID, "There was an error while attempting a request to the Giphy Library.")
+			return
+		}
+		s.ChannelMessageSend(data.ChannelID, dataSearch.Data.Url)
+	}
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -82,12 +174,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	var content string
 	content = m.Content
 
-	if !strings.HasPrefix(content, "s/") {
+	args := strings.FieldsFunc(content, func(c rune) bool {
+		return unicode.IsSpace(c)
+	})
+
+	if len(args) == 0 || !strings.HasPrefix(args[0], "s/") {
 		return
 	}
 
-	if v, found := validMap[strings.Split(content, "s/")[1]]; found {
-		v.(func(*discordgo.Session, *discordgo.MessageCreate))(s, m)
+	commandWord := strings.Split(args[0], "s/")[1]
+	data := CommandData{args[1:], m.Author, m.ChannelID}
+	fmt.Println(data)
+
+	if v, found := validMap[commandWord]; found {
+		v.(func(*discordgo.Session, *CommandData))(s, &data)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "That was not a valid command.")
 	}
