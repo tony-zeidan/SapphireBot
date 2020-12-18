@@ -48,23 +48,38 @@ func init() {
 		{
 			Triggers:    []string{"help", "info"},
 			Description: "Obtain information about Sapphire's commands.",
+			Syntax:      "s/help",
 			Executor:    helpCommand},
 		{
 			Triggers:    []string{"hello", "hi", "greetings"},
 			Description: "Your personal way of greeting Sapphire.",
+			Syntax:      "s/hello",
 			Executor:    helloCommand},
 		{
 			Triggers:    []string{"roll", "rand"},
 			Description: "Roll a random number between two givens.",
+			Syntax:      "s/roll | s/roll <max> | s/roll <min> <max>",
 			Executor:    rollCommand},
 		{
 			Triggers:    []string{"giphy", "gif", "gifsearch"},
 			Description: "Search Giphy for any gifs.",
+			Syntax:      "s/giphy <search query> | s/giphy trending",
 			Executor:    giphySearchCommand},
 		{
 			Triggers:    []string{"freq", "occurrences"},
 			Description: "Sapphire will output the frequency of each word in the message.",
+			Syntax:      "s/freq <message>",
 			Executor:    occurrencesCommand},
+		{
+			Triggers:    []string{"status", "report"},
+			Description: "Obtain information about Sapphire's status.",
+			Syntax:      "s/status",
+			Executor:    reportCommand},
+		{
+			Triggers:    []string{"debug", "test"},
+			Description: "Testing command for development.",
+			Syntax:      "s/debug",
+			Executor:    testCommand},
 	}
 
 	for _, v := range validCommands {
@@ -84,11 +99,10 @@ func helpCommand(s *discordgo.Session, data *CommandData) {
 	//we don't want the bot to print aliases (just first trigger)
 	for i, v := range validCommands {
 
-		if (i+1)%2 == 0 {
+		if (i+1)%4 == 0 {
 			paginated.Add(embedded.MessageEmbed)
 			embedded = embed.NewEmbed()
 		}
-		fmt.Println(i)
 		embedded.SetTitle("Page " + strconv.Itoa(i+1))
 		embedded.AddField(v.Triggers[0], v.Description)
 	}
@@ -103,6 +117,8 @@ func helpCommand(s *discordgo.Session, data *CommandData) {
 	paginated.Widget.Timeout = time.Minute * 5
 
 	paginated.Spawn()
+
+	paginated.NextPage()
 }
 
 //respond to the user saying hello
@@ -255,6 +271,32 @@ func giftCommand(s *discordgo.Session, data *CommandData) {
 		Title:     mentionString,
 	}
 	s.ChannelMessageSendEmbed(data.ChannelID, embed)
+}
+
+func testCommand(s *discordgo.Session, data *CommandData) {
+
+	p := dgwidgets.NewPaginator(s, data.Message.ChannelID)
+
+	// Add embed pages to paginator
+	p.Add(&discordgo.MessageEmbed{Description: "Page one"},
+		&discordgo.MessageEmbed{Description: "Page two"},
+		&discordgo.MessageEmbed{Description: "Page three"})
+
+	// Sets the footers of all added pages to their page numbers.
+	p.SetPageFooters()
+
+	// When the paginator is done listening set the colour to yellow
+	p.ColourWhenDone = 0xffff
+
+	// Stop listening for reaction events after five minutes
+	p.Widget.Timeout = time.Minute * 5
+
+	// Add a custom handler for the gun reaction.
+	p.Widget.Handle("🔫", func(w *dgwidgets.Widget, r *discordgo.MessageReaction) {
+		s.ChannelMessageSend(data.Message.ChannelID, "Bang!")
+	})
+
+	p.Spawn()
 }
 
 //respond to the creating of message events by checking for input commands
