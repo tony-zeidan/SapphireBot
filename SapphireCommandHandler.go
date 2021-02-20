@@ -41,7 +41,7 @@ type CommandData struct {
 }
 
 func init() {
-	giphyLib = libgiphy.NewGiphy(GIPHY_API_TOKEN)
+	giphyLib = libgiphy.NewGiphy(GiphyToken)
 	validMap = make(map[string]CommandMapping)
 
 	validCommands = []CommandMapping{
@@ -80,6 +80,11 @@ func init() {
 			Description: "Testing command for development.",
 			Syntax:      "s/debug",
 			Executor:    testCommand},
+		{
+			Triggers:    []string{"ping"},
+			Description: "Pong!",
+			Syntax:      "s/ping",
+			Executor:    pongCommand},
 	}
 
 	for _, v := range validCommands {
@@ -297,6 +302,10 @@ func testCommand(s *discordgo.Session, data *CommandData) {
 	})
 
 	p.Spawn()
+}
+
+func pongCommand(s *discordgo.Session, data *CommandData) {
+	s.ChannelMessageSend(data.ChannelID, "Pong!")
 }
 
 //respond to the creating of message events by checking for input commands

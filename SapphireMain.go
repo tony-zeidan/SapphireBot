@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 
@@ -13,12 +12,11 @@ import (
 )
 
 var (
-	Token string
+	Token      string
+	GiphyToken string
 )
 
 const (
-	//Giphy API token
-	GIPHY_API_TOKEN = "CXYNdpzCDL4y8XgaJqgWf75khRNc1goy"
 	//Random number generation upper limit
 	RAND_UPPER_LIM = 100000
 	//Giphy number of images limit
@@ -30,14 +28,15 @@ const (
 
 //Run once on initialization
 func init() {
-	fmt.Printf("%s", os.Getenv("SAPPHIRE_DISCORD_API_TOKEN"))
-	ev := os.Getenv("SAPPHIRE_DISCORD_API_TOKEN")
-	if ev == "" {
-		errors.New("Big token error.")
-	}
-	flag.StringVar(&Token, "t", "NjcyNTkwMDE4MzUwNDE1ODc0.XjNsRA.Dr_CmP1J2DI0COuw3z23XNLlkgk", "Bot Token")
+	dt := os.Getenv("DISCORD_API_TOKEN")
+	fmt.Println(dt)
+	flag.StringVar(&Token, "d", dt, "Bot Token")
+	gt := os.Getenv("GIPHY_API_TOKEN")
+	fmt.Println(gt)
+	flag.StringVar(&GiphyToken, "g", gt, "Giphy Token")
 	flag.Parse()
-
+	fmt.Println("Discord token is " + Token)
+	fmt.Println("Giphy token is " + GiphyToken)
 }
 
 func main() {
