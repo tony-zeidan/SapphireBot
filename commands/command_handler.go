@@ -1,18 +1,38 @@
-package main
+package commands
 
 import (
+	"flag"
 	"fmt"
-	"math/rand"
-	"strconv"
-	"strings"
-	"time"
-	"unicode"
-
 	"github.com/Clinet/discordgo-embed"
 	"github.com/Necroforger/dgwidgets"
 	"github.com/bwmarrin/discordgo"
 	"github.com/sanzaru/go-giphy"
+	"math/rand"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+	"unicode"
 )
+
+var GiphyToken string
+
+const (
+	//Random number generation upper limit
+	RAND_UPPER_LIM = 100000
+	//Giphy number of images limit
+	GIPHY_PRINT_LIM = 10
+	//Sapphire gif (for gift command)
+	SAPPHIRE_URL = "https://assets.bigcartel.com/product_images/158847679/SAV-201V---75361.gif"
+	GIFT_MENTION_LIM = 3
+)
+
+func init() {
+	gt := os.Getenv("GIPHY_API_TOKEN")
+	flag.StringVar(&GiphyToken, "g", gt, "Giphy Token")
+	flag.Parse()
+	fmt.Println("Giphy token is " + GiphyToken)
+}
 
 var (
 	validCommands []CommandMapping
@@ -135,7 +155,7 @@ func helloCommand(s *discordgo.Session, data *CommandData) {
 func rollCommand(s *discordgo.Session, data *CommandData) {
 	args := data.Args
 	num1 := 1
-	num2 := 6
+	num2 := 10
 	if len(args) >= 1 {
 		parsed1, err1 := strconv.Atoi(args[0])
 		if err1 != nil {
@@ -309,7 +329,7 @@ func pongCommand(s *discordgo.Session, data *CommandData) {
 }
 
 //respond to the creating of message events by checking for input commands
-func handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
