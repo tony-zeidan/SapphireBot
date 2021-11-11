@@ -23,16 +23,9 @@ const (
 	//Giphy number of images limit
 	GIPHY_PRINT_LIM = 10
 	//Sapphire gif (for gift command)
-	SAPPHIRE_URL = "https://assets.bigcartel.com/product_images/158847679/SAV-201V---75361.gif"
+	SAPPHIRE_URL     = "https://assets.bigcartel.com/product_images/158847679/SAV-201V---75361.gif"
 	GIFT_MENTION_LIM = 3
 )
-
-func init() {
-	gt := os.Getenv("GIPHY_API_TOKEN")
-	flag.StringVar(&GiphyToken, "g", gt, "Giphy Token")
-	flag.Parse()
-	fmt.Println("Giphy token is " + GiphyToken)
-}
 
 var (
 	validCommands []CommandMapping
@@ -48,7 +41,7 @@ type CommandMapping struct {
 	SubCommands []CommandData
 }
 
-//Data structure for containing command data
+// CommandData Data structure for containing command data
 type CommandData struct {
 	//command arguments
 	Args []string
@@ -61,6 +54,14 @@ type CommandData struct {
 }
 
 func init() {
+
+	// get Giphy API token
+	println(os.Getenv("SAPPHIRE_GIPHY_API_TOKEN"))
+	gt := os.Getenv("SAPPHIRE_GIPHY_API_TOKEN")
+	flag.StringVar(&GiphyToken, "g", gt, "Giphy Token")
+	flag.Parse()
+	fmt.Println("Giphy token is " + GiphyToken)
+
 	giphyLib = libgiphy.NewGiphy(GiphyToken)
 	validMap = make(map[string]CommandMapping)
 
@@ -204,6 +205,13 @@ func occurrencesCommand(s *discordgo.Session, data *CommandData) {
 		contentString += "(" + k + "," + strconv.Itoa(v) + ")\n"
 	}
 	s.ChannelMessageSend(data.ChannelID, contentString+"```")
+}
+
+func getSearch(s string) (interface{}, error) {
+	if s == "trending" {
+		return giphyLib.GetTrending()
+	}
+	return giphyLib.GetSearch(s, 5, -1, "", "", false)
 }
 
 //search the giphy library for either the top 3 trending gifs or the a random one of what the user requested

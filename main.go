@@ -15,11 +15,10 @@ var Token string
 
 func init() {
 	dt := os.Getenv("SAPPHIRE_DISCORD_API_TOKEN")
-	flag.StringVar(&Token, "dt", dt, "Giphy Token")
+	flag.StringVar(&Token, "dt", dt, "Discord Token")
 	flag.Parse()
 	fmt.Println("Discord API Token: " + Token)
 }
-
 
 func main() {
 	dg, err := discordgo.New("Bot " + Token)
