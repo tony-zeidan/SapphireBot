@@ -10,16 +10,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
-	"unicode"
 )
 
 var (
-	Token     string
-	BotPrefix string
-
 	config *configStruct
+	dg     *discordgo.Session
 )
 
 type configStruct struct {
@@ -28,8 +24,7 @@ type configStruct struct {
 	BotID     string
 }
 
-var dg *discordgo.Session
-
+// Setup logging utility and create bot entity
 func init() {
 	// Set up logging functionality
 	logFile, err := os.OpenFile("sapphire.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
@@ -74,25 +69,38 @@ func init() {
 	}
 }
 
+// Add the command handlers to the bot entity
+func init() {
+	// Add the command handlers before booting
+	fmt.Println("Registering command handlers.")
+	log.Println("Registering command handlers.")
+	for _, v := range commands.ValidCommandHandlers {
+		dg.AddHandler(v.Handler)
+		fmt.Println("Registered the command handler for:", v.Name)
+		log.Println("Registered the command handler for:", v.Name)
+	}
+	fmt.Println("Command handlers registered.")
+	log.Println("Command handlers registered.")
+}
+
 func main() {
 	dg.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		fmt.Printf("Logged in as: %v#%v\n", s.State.User.Username, s.State.User.Discriminator)
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 	})
 	err := dg.Open()
 	if err != nil {
 		fmt.Println("Could not open the bot session", err)
-		log.Fatal(err)
+		log.Fatal("Could not open the bot session", err)
 	}
 
-	fmt.Println(dg.State.User)
 	defer dg.Close()
-	fmt.Println("SAPPHIRE BOT is Online!")
-	log.Println("SAPPHIRE BOT is Online!")
 
-	log.Println("Registering commands with Discord.")
+	log.Println("Registering commands with Discord commands API.")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands.ValidCommands))
 	for i, v := range commands.ValidCommands {
-		fmt.Println(v.Name)
+		fmt.Println("Registering the command with Discord:", v.Name)
+		log.Println("Registering the command with Discord:", v.Name)
 
 		cmd, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", v)
 		if err != nil {
@@ -105,63 +113,17 @@ func main() {
 		registeredCommands[i] = cmd
 	}
 
-	log.Println("Registering command handlers.")
-	dg.AddHandler(commands.HelpCommand)
-
 	fmt.Println("Bot is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-}
-
-func CommandUse(s *discordgo.Session, m *discordgo.InteractionCreate) {
-	if s == nil || m == nil {
-		return
-	}
-	fmt.Println("HEREHANDLE")
-}
-
-// respond to the creating of message events by checking for input commands
-func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	fmt.Println("HERE")
-
-	if s == nil || m == nil {
-		return
-	}
-
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	if m.Content == "" {
-		return
-	}
-
-	var content string
-	content = m.Content
-	fmt.Println(content)
-
-	args := strings.FieldsFunc(content, func(c rune) bool {
-		return unicode.IsSpace(c)
-	})
-	fmt.Println(args)
-
-	if len(args) == 0 || !strings.HasPrefix(args[0], "/") {
-		return
-	}
-
-	commandWord := strings.Split(args[0], "/")[1]
-	data := commands.CommandData{Args: args[1:], Message: m.Message, Author: m.Author, ChannelID: m.ChannelID}
-	fmt.Println(data)
-
-	if v, found := commands.ValidCommandMapping[commandWord]; found {
-		v.Executor.(func(*discordgo.Session, *commands.CommandData))(s, &data)
-	} else {
-		_, err := s.ChannelMessageSend(m.ChannelID, "That was not a valid command.")
+	// Remove commands upon graceful shutdown
+	for _, v := range commands.ValidCommands {
+		err := dg.ApplicationCommandDelete(dg.State.User.ID, "", v.ID)
 		if err != nil {
-			log.Println("There was an error sending a message to the chat.")
+			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
 		}
 	}
+
 }
