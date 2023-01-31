@@ -1,12 +1,9 @@
 package main
 
 import (
-	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/tony-zeidan/SapphireBot/commands"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -14,15 +11,8 @@ import (
 )
 
 var (
-	config *configStruct
-	dg     *discordgo.Session
+	dg *discordgo.Session
 )
-
-type configStruct struct {
-	Token     string `json:"Token"`
-	BotPrefix string `json:"BotPrefix"`
-	BotID     string
-}
 
 // Setup logging utility and create bot entity
 func init() {
@@ -37,32 +27,7 @@ func init() {
 	log.Println("Log file instantiated.")
 	log.Println("Reading bot configuration file.")
 
-	// Read the bot configuration
-	jsonFile, err := ioutil.ReadFile("config.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Successfully opened config.")
-	log.Println("Successfully opened the configuration.")
-
-	_ = json.Unmarshal([]byte(jsonFile), &config)
-
-	fmt.Println("TOKEN-------------------------------")
-	fmt.Println("env_name:", config.Token)
-	log.Println("Token.env_name:", config.Token)
-
-	dt, present := os.LookupEnv(config.Token)
-	if !present {
-		log.Fatal("The environment variable for the Discord API token was not set. Fatal error.")
-	}
-
-	flag.StringVar(&config.Token, "dt", dt, "Discord Token")
-	flag.Parse()
-
-	fmt.Println("value:", config.Token)
-	log.Println("Token.env_name:", config.Token)
-
-	dg, err = discordgo.New("Bot " + config.Token)
+	dg, err = discordgo.New("Bot " + Config.Token)
 	if err != nil {
 		fmt.Println("Could not instantiate the bot.", err)
 		log.Fatal(err)
