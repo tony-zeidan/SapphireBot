@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
+	"unicode"
 )
 
 var (
@@ -72,7 +74,36 @@ func main() {
 	fmt.Println("SAPPHIRE BOT is Online!")
 	log.Println("SAPPHIRE BOT is Online!")
 
-	MessageCreate
+	dg.AddHandler(messageCreate)
 
 	dg.Close()
+}
+
+// respond to the creating of message events by checking for input commands
+func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	var content string
+	content = m.Content
+
+	args := strings.FieldsFunc(content, func(c rune) bool {
+		return unicode.IsSpace(c)
+	})
+	fmt.Println(args)
+
+	if len(args) == 0 || !strings.HasPrefix(args[0], "s/") {
+		return
+	}
+
+	commandWord := strings.Split(args[0], "s/")[1]
+	data := CommandData{args[1:], m.Message, m.Author, m.ChannelID}
+	fmt.Println(data)
+
+	if v, found := validMap[commandWord]; found {
+		v.Executor.(func(*discordgo.Session, *CommandData))(s, &data)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "That was not a valid command.")
+	}
 }
