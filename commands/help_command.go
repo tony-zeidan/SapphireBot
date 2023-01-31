@@ -4,13 +4,12 @@ import (
 	embed "github.com/Clinet/discordgo-embed"
 	"github.com/Necroforger/dgwidgets"
 	"github.com/bwmarrin/discordgo"
-	"github.com/tony-zeidan/SapphireBot"
 	"strconv"
 	"time"
 )
 
 // respond to the user asking for help with the bots commands by sending a list of available commands
-func helpCommand(s *discordgo.Session, data *main.CommandData) {
+func helpCommand(s *discordgo.Session, data *CommandData) {
 
 	paginated := dgwidgets.NewPaginator(s, data.ChannelID)
 

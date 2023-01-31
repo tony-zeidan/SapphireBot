@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	_ "github.com/tony-zeidan/SapphireBot/commands"
 	"io/ioutil"
 	"log"
 	"os"
