@@ -4,26 +4,29 @@ import (
 	embed "github.com/Clinet/discordgo-embed"
 	"github.com/Necroforger/dgwidgets"
 	"github.com/bwmarrin/discordgo"
+	"log"
 	"strconv"
 	"time"
 )
 
 // respond to the user asking for help with the bots commands by sending a list of available commands
-func helpCommand(s *discordgo.Session, data *CommandData) {
+func HelpCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
-	paginated := dgwidgets.NewPaginator(s, data.ChannelID)
+	paginated := dgwidgets.NewPaginator(s, i.ChannelID)
 
 	embedded := embed.NewEmbed()
 
 	//we don't want the bot to print aliases (just first trigger)
-	for i, v := range validCommands {
-
+	paginated.Add(embedded.MessageEmbed)
+	j := 1
+	for i, v := range ValidCommands {
 		if (i+1)%4 == 0 {
+			j++
 			paginated.Add(embedded.MessageEmbed)
 			embedded = embed.NewEmbed()
 		}
-		embedded.SetTitle("Page " + strconv.Itoa(i+1))
-		embedded.AddField(v.Triggers[0], v.Description)
+		embedded.SetTitle("Page " + strconv.Itoa(j))
+		embedded.AddField(v.Name, v.Description)
 	}
 
 	// Sets the footers of all added pages to their page numbers.
@@ -35,7 +38,25 @@ func helpCommand(s *discordgo.Session, data *CommandData) {
 	// Stop listening for reaction events after five minutes
 	paginated.Widget.Timeout = time.Minute * 5
 
-	paginated.Spawn()
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags:   discordgo.MessageFlagsEphemeral,
+			Content: "Please see a list of commands below!",
+		},
+	})
+	if err != nil {
+		_, err2 := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+			Content: "Something went wrong! I'm sorry...",
+		})
+		if err2 != nil {
+			return
+		}
+	}
 
+	err = paginated.Spawn()
+	if err != nil {
+		log.Fatal(err)
+	}
 	paginated.NextPage()
 }

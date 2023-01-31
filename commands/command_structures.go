@@ -27,20 +27,48 @@ type CommandMapping struct {
 	SubCommands []CommandData
 }
 
-func init() {
-	ValidCommandMapping = make(map[string]CommandMapping)
-
-	validCommands = []CommandMapping{
+var (
+	integerOptionMinValue = 1.0
+	ValidCommands         = []*discordgo.ApplicationCommand{
 		{
-			Triggers:    []string{"help", "info"},
-			Description: "Obtain information about Sapphire's commands.",
-			Syntax:      "s/help",
-			Executor:    helpCommand},
+			Name:        "help",
+			Description: "Gives a basic list of commands for the Sapphire bot.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "pagenum",
+					Description: "Specify the page number to display.",
+					MinValue:    &integerOptionMinValue,
+					Type:        discordgo.ApplicationCommandOptionInteger,
+				},
+			},
+		},
+		{
+			Name:        "complete",
+			Description: "Uses OpenAI GPT-3 to complete your phrase!",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "query",
+					Description: "Specify the text to complete.",
+					Type:        discordgo.ApplicationCommandOptionString,
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "codehelp",
+			Description: "Uses OpenAi to help you with code!",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Name:        "codefile",
+					Type:        discordgo.ApplicationCommandOptionAttachment,
+					Description: "The code in attachment format.",
+				},
+				{
+					Name:        "codetext",
+					Type:        discordgo.ApplicationCommandOptionString,
+					Description: "The code in text format.",
+				},
+			},
+		},
 	}
-
-	for _, v := range validCommands {
-		for _, v2 := range v.Triggers {
-			ValidCommandMapping[v2] = v
-		}
-	}
-}
+)
