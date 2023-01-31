@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	_ "github.com/tony-zeidan/SapphireBot/commands"
+	"github.com/tony-zeidan/SapphireBot/commands"
 	"io/ioutil"
 	"log"
 	"os"
@@ -99,11 +99,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	commandWord := strings.Split(args[0], "s/")[1]
-	data := CommandData{args[1:], m.Message, m.Author, m.ChannelID}
+	data := commands.CommandData{Args: args[1:], Message: m.Message, Author: m.Author, ChannelID: m.ChannelID}
 	fmt.Println(data)
 
-	if v, found := validMap[commandWord]; found {
-		v.Executor.(func(*discordgo.Session, *CommandData))(s, &data)
+	if v, found := commands.ValidCommandMapping[commandWord]; found {
+		v.Executor.(func(*discordgo.Session, *commands.CommandData))(s, &data)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "That was not a valid command.")
 	}

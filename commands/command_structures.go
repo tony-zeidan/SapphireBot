@@ -3,8 +3,8 @@ package commands
 import "github.com/bwmarrin/discordgo"
 
 var (
-	validCommands []CommandMapping
-	validMap      map[string]CommandMapping
+	validCommands       []CommandMapping
+	ValidCommandMapping map[string]CommandMapping
 )
 
 // CommandData Data structure for containing command data
@@ -28,7 +28,7 @@ type CommandMapping struct {
 }
 
 func init() {
-	validMap = make(map[string]CommandMapping)
+	ValidCommandMapping = make(map[string]CommandMapping)
 
 	validCommands = []CommandMapping{
 		{
@@ -40,7 +40,7 @@ func init() {
 
 	for _, v := range validCommands {
 		for _, v2 := range v.Triggers {
-			validMap[v2] = v
+			ValidCommandMapping[v2] = v
 		}
 	}
 }
