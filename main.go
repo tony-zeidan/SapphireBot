@@ -20,6 +20,7 @@ var (
 type configStruct struct {
 	Token     string `json:"Token"`
 	BotPrefix string `json:"BotPrefix"`
+	BotID     string
 }
 
 func init() {
@@ -48,8 +49,7 @@ func init() {
 
 	fmt.Println("TOKEN-------------------------------")
 	fmt.Println("env_name:", config.Token)
-	log.Println("Token Information:")
-	log.Println("\tenv_name:", config.Token)
+	log.Println("Token.env_name:", config.Token)
 
 	dt, present := os.LookupEnv(config.Token)
 	if !present {
@@ -59,11 +59,20 @@ func init() {
 	flag.StringVar(&config.Token, "dt", dt, "Discord Token")
 	flag.Parse()
 
-	fmt.Println("Discord API Token: " + config.Token)
+	fmt.Println("value:", config.Token)
+	log.Println("Token.env_name:", config.Token)
 }
 
 func main() {
-	dg, _ := discordgo.New("Bot " + Token)
+	dg, err := discordgo.New("Bot " + Token)
+	if err != nil {
+		fmt.Println("Could not instantiate the bot.", err)
+		log.Fatal(err)
+	}
+	fmt.Println("SAPPHIRE BOT is Online!")
+	log.Println("SAPPHIRE BOT is Online!")
+
+	MessageCreate
 
 	dg.Close()
 }
