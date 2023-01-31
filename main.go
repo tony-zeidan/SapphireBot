@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/tony-zeidan/SapphireBot/commands"
+	"github.com/tony-zeidan/SapphireBot/config"
 	"log"
 	"os"
 	"os/signal"
@@ -27,7 +28,7 @@ func init() {
 	log.Println("Log file instantiated.")
 	log.Println("Reading bot configuration file.")
 
-	dg, err = discordgo.New("Bot " + Config.Token)
+	dg, err = discordgo.New("Bot " + config.Config.Token)
 	if err != nil {
 		fmt.Println("Could not instantiate the bot.", err)
 		log.Fatal(err)
