@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/PullRequestInc/go-gpt3"
 	"github.com/bwmarrin/discordgo"
-	"log"
 )
 
 // respond to the user asking for help with the bots commands by sending a list of available commands
@@ -14,7 +13,7 @@ func CompleteCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	fmt.Println(i.ApplicationCommandData().Options[0])
 	query := options["query"].StringValue()
 
-	var tokens = 1000
+	var tokens = 512
 	if _, ok := options["tokens"]; ok {
 		tokens = int(options["tokens"].IntValue())
 	}
@@ -22,8 +21,9 @@ func CompleteCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	resp, err := GPT3Client.Completion(CTX, gpt3.CompletionRequest{
 		Prompt:    []string{query},
 		MaxTokens: gpt3.IntPtr(tokens),
+		Stop:      []string{"."},
 	})
-	log.Println(err)
+
 	if err != nil {
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -33,6 +33,8 @@ func CompleteCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		return
 	}
+
+	fmt.Println(resp.Choices)
 
 	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
