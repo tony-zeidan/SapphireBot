@@ -40,11 +40,11 @@ func init() {
 	// Add the command handlers before booting
 	fmt.Println("Registering command handlers.")
 	log.Println("Registering command handlers.")
-	for _, v := range commands.ValidCommandHandlers {
-		dg.AddHandler(v.Handler)
-		fmt.Println("Registered the command handler for:", v.Name)
-		log.Println("Registered the command handler for:", v.Name)
-	}
+	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := commands.ValidCommandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
 	fmt.Println("Command handlers registered.")
 	log.Println("Command handlers registered.")
 }

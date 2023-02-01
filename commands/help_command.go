@@ -4,7 +4,6 @@ import (
 	embed "github.com/Clinet/discordgo-embed"
 	"github.com/Necroforger/dgwidgets"
 	"github.com/bwmarrin/discordgo"
-	"log"
 	"strconv"
 	"time"
 )
@@ -47,6 +46,7 @@ func HelpWrapper(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Data: &discordgo.InteractionResponseData{
 			Flags:   discordgo.MessageFlagsEphemeral,
 			Content: "Please see a list of commands below!",
+			Embeds:  paginated.Pages,
 		},
 	})
 	if err != nil {
@@ -57,10 +57,4 @@ func HelpWrapper(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			return
 		}
 	}
-
-	err = paginated.Spawn()
-	if err != nil {
-		log.Fatal(err)
-	}
-	paginated.NextPage()
 }

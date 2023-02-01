@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"github.com/PullRequestInc/go-gpt3"
 	"github.com/bwmarrin/discordgo"
 	"github.com/tony-zeidan/SapphireBot/config"
@@ -16,8 +17,9 @@ func MakeOptionMapping(i *discordgo.InteractionCreate) map[string]*discordgo.App
 	options := i.ApplicationCommandData().Options
 
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-	for _, opt := range optionMap {
+	for _, opt := range options {
 		optionMap[opt.Name] = opt
+		fmt.Println(opt.Name)
 	}
 	return optionMap
 }

@@ -51,18 +51,9 @@ var (
 			},
 		},
 	}
-	ValidCommandHandlers = []*CommandMapping{
-		{
-			Name:    "help",
-			Handler: HelpCommand,
-		},
-		{
-			Name:    "complete",
-			Handler: CompleteCommand,
-		},
-		{
-			Name:    "codehelp",
-			Handler: CodeHelpCommand,
-		},
+	ValidCommandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+		"help":     HelpCommand,
+		"complete": CompleteCommand,
+		"codehelp": CodeHelpCommand,
 	}
 )
