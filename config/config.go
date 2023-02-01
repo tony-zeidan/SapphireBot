@@ -19,7 +19,7 @@ var Config *configStruct
 func init() {
 
 	// Read the bot configuration
-	jsonFile, err := ioutil.ReadFile("Config.json")
+	jsonFile, err := ioutil.ReadFile("config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
